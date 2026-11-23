@@ -55,12 +55,23 @@ const ago = (t: number) => {
 const initials = (t: string) => t.replace(/[^\p{L}\p{N} ]/gu, '').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '#'
 const colorFor = (id: number) => AV_COLORS[Math.abs(id) % AV_COLORS.length]
 
+function previewAuth(): Record<string, string> | null {
+  // Operator preview outside Telegram: /app#preview=<admin token>&uid=<telegram id>
+  const h = new URLSearchParams(window.location.hash.slice(1))
+  if (h.get('preview') && h.get('uid')) sessionStorage.setItem('wink.preview', JSON.stringify({ t: h.get('preview'), u: h.get('uid') }))
+  const raw = sessionStorage.getItem('wink.preview')
+  if (!raw) return null
+  const { t, u } = JSON.parse(raw)
+  return { 'x-wink-admin': t, 'x-wink-user': u }
+}
+
 function useApi() {
   const auth = useRef('')
+  const extra = useRef<Record<string, string>>({})
   const call = useCallback(async <T,>(path: string, body?: unknown): Promise<T> => {
     const res = await fetch(path, {
       method: body === undefined ? 'GET' : 'POST',
-      headers: { authorization: `tma ${auth.current}`, ...(body !== undefined ? { 'content-type': 'application/json' } : {}) },
+      headers: { authorization: `tma ${auth.current}`, ...extra.current, ...(body !== undefined ? { 'content-type': 'application/json' } : {}) },
       body: body === undefined ? undefined : JSON.stringify(body),
       cache: 'no-store',
     })
@@ -68,7 +79,7 @@ function useApi() {
     if (!res.ok) throw new Error(j.error ?? `Request failed (${res.status})`)
     return j as T
   }, [])
-  return { auth, call }
+  return { auth, extra, call }
 }
 
 export default function MiniApp() {
@@ -78,7 +89,7 @@ export default function MiniApp() {
   const [outside, setOutside] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [dark, setDark] = useState(false)
-  const { auth, call } = useApi()
+  const { auth, extra, call } = useApi()
 
   const flash = useCallback((msg: string) => {
     setToast(msg)
@@ -96,26 +107,32 @@ export default function MiniApp() {
 
   useEffect(() => {
     const wa = webApp()
-    if (!wa?.initData) {
+    const preview = previewAuth()
+    if (!wa?.initData && !preview) {
       setOutside(true)
       return
     }
-    auth.current = wa.initData
-    wa.ready()
-    wa.expand()
-    const applyScheme = () => setDark(wa.colorScheme === 'dark')
-    applyScheme()
-    wa.onEvent('themeChanged', applyScheme)
-    try {
-      wa.setHeaderColor?.('secondary_bg_color')
-      wa.setBackgroundColor?.('secondary_bg_color')
-    } catch { /* older clients */ }
+    if (wa?.initData) {
+      auth.current = wa.initData
+      wa.ready()
+      wa.expand()
+      const applyScheme = () => setDark(wa.colorScheme === 'dark')
+      applyScheme()
+      wa.onEvent('themeChanged', applyScheme)
+      try {
+        wa.setHeaderColor?.('secondary_bg_color')
+        wa.setBackgroundColor?.('secondary_bg_color')
+      } catch { /* older clients */ }
+    } else if (preview) {
+      extra.current = preview
+      setDark(new URLSearchParams(window.location.search).get('theme') === 'dark')
+    }
     const t = new URLSearchParams(window.location.search).get('tab')
     if (t && ['Glasses', 'Wallet', 'Sources', 'Activity'].includes(t)) setTab(t as Tab)
     load()
     const id = window.setInterval(() => document.visibilityState === 'visible' && load(), 5000)
     return () => window.clearInterval(id)
-  }, [auth, load])
+  }, [auth, extra, load])
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark)

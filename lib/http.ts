@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { deviceFromToken, touchDevice, upsertUser } from './db'
+import { deviceFromToken, getUser, touchDevice, upsertUser } from './db'
+import { safeEqual } from './crypto'
 import { LimitError } from './trade'
 import { verifyInitData } from './telegram'
 import type { Device, User } from './types'
@@ -20,7 +21,20 @@ export class HttpError extends Error {
   constructor(public status: number, message: string) { super(message) }
 }
 
+export function isAdmin(req: Request): boolean {
+  const want = process.env.WINK_ADMIN_TOKEN ?? ''
+  const got = req.headers.get('x-wink-admin') ?? ''
+  return want.length >= 32 && got.length === want.length && safeEqual(want, got)
+}
+
 export async function miniAppUser(req: Request): Promise<User> {
+  // Operator preview: lets the owner load the Mini App outside Telegram for testing.
+  if (isAdmin(req) && req.headers.get('x-wink-user')) {
+    const id = Number(req.headers.get('x-wink-user'))
+    const existing = await getUser(id)
+    if (existing) return existing
+    return upsertUser({ id, first_name: 'Preview' })
+  }
   const h = req.headers.get('authorization') ?? ''
   const initData = h.startsWith('tma ') ? h.slice(4) : req.headers.get('x-telegram-init-data') ?? ''
   const tu = verifyInitData(initData)

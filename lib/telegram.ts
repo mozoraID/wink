@@ -1,4 +1,4 @@
-import { createHmac } from 'node:crypto'
+import { createHmac, createPublicKey, verify as edVerify } from 'node:crypto'
 import { safeEqual } from './crypto'
 
 const api = (method: string) => `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/${method}`
@@ -16,18 +16,38 @@ export async function tg<T = unknown>(method: string, body: Record<string, unkno
 
 export interface TgUser { id: number; first_name: string; last_name?: string; username?: string; language_code?: string }
 
-/** Validates Telegram.WebApp.initData (https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app). */
+// Telegram's Ed25519 key for third-party initData validation (production).
+const TG_PUBLIC_KEY = 'e7bf03a2fa4602af4580703d88dda5bb59f32ed8b02a56c187fe7d34caed242d'
+const edKey = createPublicKey({ key: Buffer.concat([Buffer.from('302a300506032b6570032100', 'hex'), Buffer.from(TG_PUBLIC_KEY, 'hex')]), format: 'der', type: 'spki' })
+
+/**
+ * Validates Telegram.WebApp.initData. Uses the bot-token HMAC when the token is
+ * configured, otherwise Telegram's Ed25519 signature with the public bot id.
+ */
 export function verifyInitData(initData: string, maxAgeSec = 24 * 3600): TgUser | null {
+  if (!initData) return null
   const botToken = process.env.TELEGRAM_BOT_TOKEN
-  if (!botToken || !initData) return null
+  const botId = process.env.TELEGRAM_BOT_ID ?? botToken?.split(':')[0]
   const params = new URLSearchParams(initData)
   const hash = params.get('hash')
-  if (!hash) return null
+  const signature = params.get('signature')
   params.delete('hash')
-  const check = [...params.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${k}=${v}`).join('\n')
-  const secret = createHmac('sha256', 'WebAppData').update(botToken).digest()
-  const calc = createHmac('sha256', secret).update(check).digest('hex')
-  if (!safeEqual(calc, hash)) return null
+  const pairs = [...params.entries()].sort(([a], [b]) => a.localeCompare(b))
+  let valid = false
+  if (botToken && hash) {
+    const check = pairs.map(([k, v]) => `${k}=${v}`).join('\n')
+    const secret = createHmac('sha256', 'WebAppData').update(botToken).digest()
+    valid = safeEqual(createHmac('sha256', secret).update(check).digest('hex'), hash)
+  }
+  if (!valid && signature && botId) {
+    const check = `${botId}:WebAppData\n` + pairs.filter(([k]) => k !== 'signature').map(([k, v]) => `${k}=${v}`).join('\n')
+    try {
+      valid = edVerify(null, Buffer.from(check), edKey, Buffer.from(signature, 'base64url'))
+    } catch {
+      valid = false
+    }
+  }
+  if (!valid) return null
   const authDate = Number(params.get('auth_date') ?? 0)
   if (!authDate || Date.now() / 1000 - authDate > maxAgeSec) return null
   try {
