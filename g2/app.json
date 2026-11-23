@@ -1,11 +1,20 @@
 {
-  "package_id": "com.example.evenhubminimal",
+  "package_id": "com.mozoraid.wink",
   "edition": "202601",
-  "name": "Even Hub Minimal",
+  "name": "Wink",
   "version": "0.1.0",
-  "min_app_version": "2.0.0",
-  "min_sdk_version": "0.0.10",
+  "min_sdk_version": "0.0.16",
   "entrypoint": "index.html",
-  "permissions": [],
+  "permissions": [
+    {
+      "name": "network",
+      "desc": "Loads trade calls from your Telegram sources and places confirmed orders on Hyperliquid testnet through the Wink server.",
+      "whitelist": ["https://wink-ijustabi.vercel.app"]
+    },
+    {
+      "name": "g2-microphone",
+      "desc": "Hears short voice commands like “skip” or “close half” while a call or position is on screen."
+    }
+  ],
   "supported_languages": ["en"]
 }

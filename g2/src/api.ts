@@ -1,6 +1,6 @@
 // Backend client. Same origin when served from the Wink deployment (/g2/),
 // or VITE_WINK_API when packaged as an .ehpk.
-export const API = (import.meta.env.VITE_WINK_API || (location.protocol.startsWith('http') ? location.origin : 'https://wink-signal.vercel.app')).replace(/\/$/, '')
+export const API = (import.meta.env.VITE_WINK_API || (location.protocol.startsWith('http') ? location.origin : 'https://wink-ijustabi.vercel.app')).replace(/\/$/, '')
 
 export interface GlassesSignal {
   id: string; source: string; coin: string; side: 'long' | 'short'
