@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
+    <title>Wink</title>
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; margin: 0; padding: 0 }
+      html, body { height: 100%; background: #232323; color: #E5E5E5;
+        font: 15px/1.4 -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
+        touch-action: manipulation; -webkit-text-size-adjust: 100%; overscroll-behavior: none; }
+      main { max-width: 480px; margin: 0 auto; padding: 24px 20px; display: flex; flex-direction: column; gap: 20px; min-height: 100%; }
+      header { display: flex; align-items: center; justify-content: space-between; }
+      h1 { font-size: 20px; font-weight: 650; letter-spacing: -.02em; display: flex; align-items: center; gap: 8px }
+      h1 i { width: 10px; height: 10px; border-radius: 50%; background: #3CFA44; box-shadow: 0 0 12px rgba(60,250,68,.6) }
+      #who { font-size: 13px; color: #A7A7A7 }
+      .lead { color: #A7A7A7; font-size: 15px; line-height: 21px }
+      form { display: flex; flex-direction: column; gap: 12px }
+      #code { height: 64px; border-radius: 14px; border: 1px solid #3E3E3E; background: #2E2E2E; color: #fff; text-align: center;
+        font: 600 32px/1 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .35em; text-transform: uppercase; padding-left: .35em }
+      #code:focus { outline: none; border-color: #3CFA44 }
+      button { height: 48px; border-radius: 12px; border: 0; background: #3CFA44; color: #0b140b; font: 600 16px/1 inherit; font-family: inherit }
+      button.ghost { background: #2E2E2E; color: #E5E5E5; border: 1px solid #3E3E3E }
+      #status { font-size: 13px; color: #A7A7A7; min-height: 18px }
+      .mirror { border-radius: 14px; background: #000; border: 1px solid #2E2E2E; padding: 14px 16px; color: #3CFA44; font-variant-numeric: tabular-nums }
+      .mirror .top { display: flex; justify-content: space-between; font-size: 12px; letter-spacing: .04em; opacity: .8 }
+      #m-big { font-size: 30px; font-weight: 700; letter-spacing: -.02em; margin: 8px 0 6px; line-height: 1.1 }
+      #m-sub { font-size: 14px; white-space: pre-wrap; opacity: .9 }
+      .btns { display: flex; gap: 8px; margin-top: 12px }
+      .btns span { flex: 1; text-align: center; border: 1px solid rgba(60,250,68,.5); border-radius: 8px; padding: 8px; font-size: 13px }
+      .btns span:empty { display: none }
+      #heard { font-size: 13px; color: #A7A7A7; min-height: 18px }
+      footer { margin-top: auto; font-size: 12px; color: #7B7B7B; line-height: 17px }
+      body[data-state="pair"] .paired-only { display: none }
+      body[data-state="paired"] .pair-only { display: none }
+    </style>
+  </head>
+  <body data-state="pair">
+    <main>
+      <header><h1><i></i>Wink</h1><span id="who"></span></header>
+      <section class="pair-only">
+        <p class="lead">Open <b>@WinkSignal_Bot</b> in Telegram, tap <b>Open Wink</b>, and type the 6-character code from the Glasses tab.</p>
+        <form id="pair" style="margin-top:16px">
+          <input id="code" inputmode="text" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" maxlength="6" placeholder="······" aria-label="Pairing code" />
+          <button type="submit">Link glasses</button>
+        </form>
+      </section>
+      <p id="status" role="status" aria-live="polite"></p>
+      <section class="paired-only">
+        <div class="mirror" id="mirror" aria-label="What the glasses show">
+          <div class="top"><span id="m-h"></span><span id="m-hr"></span></div>
+          <div id="m-big"></div>
+          <div id="m-sub"></div>
+          <div class="btns"><span id="m-l"></span><span id="m-r"></span></div>
+        </div>
+        <p id="heard" style="margin-top:10px"></p>
+        <button class="ghost" id="unpair" style="margin-top:16px;width:100%">Unpair glasses</button>
+      </section>
+      <footer>Tap = yes · Hold = no · Swipe = positions · Double-tap = exit. Hyperliquid testnet only. Wink never holds funds. Not financial advice.</footer>
+    </main>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+dist
+*.ehpk
+!release/*.ehpk
+.env
+.env*.local
+.vercel
+public/g2
+*.tsbuildinfo
+next-env.d.ts
