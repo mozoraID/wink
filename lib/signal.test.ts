@@ -53,3 +53,11 @@ test('intents', () => {
   assert.deepEqual(parseIntent('lewati'), { action: 'skip' })
   assert.deepEqual(parseIntent('hmm'), { action: 'unknown' })
 })
+
+test('unlabeled entry range', () => {
+  const s = parseSignal('SOL long 182-184, sl 176, tp 196')!
+  assert.equal(s.entry, 182)
+  assert.equal(s.entryHigh, 184)
+  assert.equal(s.stop, 176)
+  assert.equal(s.target, 196)
+})

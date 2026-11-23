@@ -1,6 +1,10 @@
 import type { NextConfig } from 'next'
 
 const config: NextConfig = {
+  async redirects() {
+    // The glasses app is a static Vite build copied into public/g2.
+    return [{ source: '/g2', destination: '/g2/index.html', permanent: false }]
+  },
   async headers() {
     return [
       {

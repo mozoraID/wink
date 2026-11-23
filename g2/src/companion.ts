@@ -32,7 +32,7 @@ export function companion(h: Handlers) {
     },
     connected(s: GlassesState) {
       set('who', s.name)
-      set('status', s.accountError ? `Hyperliquid: ${s.accountError}` : `Live · ${s.sources} sources · ${s.account?.positions.length ?? 0} positions`)
+      set('status', s.accountError ? `Hyperliquid: ${s.accountError}` : `Live · ${plural(s.sources, 'source')} · ${plural(s.account?.positions.length ?? 0, 'position')}`)
     },
     heard(text: string, action: string, provider: string) {
       set('heard', `“${text.trim()}” → ${action}`)
@@ -49,3 +49,5 @@ export function companion(h: Handlers) {
     },
   }
 }
+
+function plural(n: number, w: string) { return `${n} ${w}${n === 1 ? '' : 's'}` }

@@ -45,9 +45,14 @@ export async function executeSignal(userId: number, signalId: string, opts: { si
       leverage: item.signal.leverage,
     })
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err)
+    const raw = err instanceof Error ? err.message : String(err)
+    const msg = /timed out|fetch failed|ECONN|ETIMEDOUT/i.test(raw)
+      ? 'Hyperliquid testnet is not responding. Nothing was sent.'
+      : /does not exist|Must deposit/i.test(raw)
+        ? 'Testnet account not funded or API wallet not approved yet. Open Wallet in the Wink Mini App.'
+        : raw
     await updateSignal(userId, signalId, s => ({ ...s, status: 'failed', note: msg }))
-    throw err
+    throw err instanceof LimitError ? err : new Error(msg)
   }
   return updateSignal(userId, signalId, s => ({ ...s, status: 'filled', order }))
 }

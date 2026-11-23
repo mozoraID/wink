@@ -86,7 +86,15 @@ export function parseSignal(raw: string, coins: string[] = DEFAULT_COINS): Trade
     const m = text.match(after)
     if (m) {
       const n = parseNumber(m[1], m[2])
-      if (n !== stop && n !== target && n !== leverage) entry = n
+      if (n !== stop && n !== target && n !== leverage) {
+        entry = n
+        // "SOL long 182-184": an unlabeled range right after the first number
+        const rest = text.slice((m.index ?? 0) + m[0].length).match(new RegExp(String.raw`^\s*(?:-|–|to|~)\s*\$?\s*${NUM}`, 'i'))
+        if (rest) {
+          const hi = parseNumber(rest[1], rest[2])
+          if (hi !== null && hi > n && hi < n * 1.2) entryHigh = hi
+        }
+      }
     }
   }
 

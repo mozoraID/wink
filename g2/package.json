@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "build:web": "tsc --noEmit && vite build --outDir ../public/g2 --emptyOutDir",
-    "pack": "npm run build && evenhub pack app.json dist -o ../release/wink.ehpk",
+    "pack": "npm run build && mkdir -p ../release && evenhub pack app.json dist -o ../release/wink.ehpk",
     "simulate": "evenhub-simulator http://localhost:5173 --automation-port 9898"
   },
   "dependencies": {

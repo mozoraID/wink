@@ -3,11 +3,15 @@ import { currentPairing, devicesFor, getChat, getFeed } from './db'
 import { account, masterOf, type AccountView } from './hl'
 import type { User } from './types'
 
-export async function accountFor(user: User): Promise<{ account: AccountView | null; error?: string }> {
+export function within<T>(p: Promise<T>, ms: number, label = 'Hyperliquid testnet'): Promise<T> {
+  return Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error(`${label} did not answer in ${ms / 1000}s`)), ms))])
+}
+
+export async function accountFor(user: User, timeoutMs = 6000): Promise<{ account: AccountView | null; error?: string }> {
   const addr = masterOf(user.wallet)
   if (!addr) return { account: null, error: 'No trading account linked' }
   try {
-    return { account: await account(addr) }
+    return { account: await within(account(addr), timeoutMs) }
   } catch (e) {
     return { account: null, error: (e as Error).message }
   }

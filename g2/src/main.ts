@@ -64,7 +64,7 @@ function cardFor(v: View): Card {
         sub: 'Open @WinkSignal_Bot › Glasses tab, then enter the\n6-character code in the Even app on your phone.\n\nDouble-tap to exit.' }
     case 'idle': {
       const n = s?.account?.positions.length ?? 0
-      return { layout: 'plain', header: `● WATCHING${s ? ` · ${s.sources} SOURCES` : ''}`, headerRight: clock(Date.now()),
+      return { layout: 'plain', header: `● WATCHING${s ? ` · ${s.sources} SOURCE${s.sources === 1 ? "" : "S"}` : ''}`, headerRight: clock(Date.now()),
         headline: { big: 'No new calls', dim: true },
         sub: (s?.account ? `Account ${money(s.account.value, false)} · Today ${money(s.account.dayPnl)}\n` : '') +
           (n ? `${n} open position${n > 1 ? 's' : ''} · swipe to view` : 'Calls from your Telegram sources show up here.') +
@@ -85,7 +85,7 @@ function cardFor(v: View): Card {
       const lev = Math.min(g.leverage ?? 3, 5)
       return { layout: 'card', header: 'CONFIRM ORDER', headerRight: `${Math.ceil((v.until - Date.now()) / 1000)}s`,
         headline: { big: `${v.side === 'buy' ? 'Buy' : 'Sell'} ${size ?? ''} ${g.coin}?`.replace('  ', ' ') },
-        sub: `@ ${fmt(g.price ?? g.entry)} · $${v.usd.toFixed(2)} · ${lev}× · testnet${g.stop && (v.side === 'buy') === (g.side === 'long') ? ` · SL ${fmt(g.stop)}` : ''}`,
+        sub: `@ ${fmt(g.price ?? g.entry)} · $${v.usd.toFixed(2)} · ${lev}× · testnet${slFor(g, v.side) ? ` · SL ${fmt(slFor(g, v.side)!)}` : ''}`,
         left: 'Tap · Yes', right: 'Hold · No' }
     }
     case 'closeConfirm': {
@@ -108,6 +108,14 @@ function cardFor(v: View): Card {
         sub: `Mark ${fmt(p.mark)}   Entry ${fmt(p.entry)}   Size ${p.size}\n\nTap, then say “close half” or “close”.${list.length > 1 ? ' Swipe for next.' : ''}` }
     }
   }
+}
+
+/** Stop shown on the confirm card: only when trading the call's direction and it sits on the losing side of the price. */
+function slFor(g: GlassesSignal, side: 'buy' | 'sell'): number | null {
+  if (!g.stop || (side === 'buy') !== (g.side === 'long')) return null
+  const px = g.price ?? g.entry
+  if (!px) return g.stop
+  return side === 'buy' ? (g.stop < px ? g.stop : null) : (g.stop > px ? g.stop : null)
 }
 
 function go(v: View) {

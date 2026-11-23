@@ -1,6 +1,6 @@
 import { handle, HttpError, json, preflight, glassesDevice } from '@/lib/http'
 import { getFeed, getUser } from '@/lib/db'
-import { accountFor } from '@/lib/view'
+import { accountFor, within } from '@/lib/view'
 import { SIGNAL_TTL_MS } from '@/lib/types'
 import { mid } from '@/lib/hl'
 
@@ -13,9 +13,12 @@ export const GET = handle(async req => {
   if (!user) throw new HttpError(401, 'Unknown user')
   const url = new URL(req.url)
   const withAccount = url.searchParams.get('account') !== '0'
-  const [feed, acct] = await Promise.all([getFeed(user.id), withAccount ? accountFor(user) : Promise.resolve(null)])
+  const feed = await getFeed(user.id)
   const pending = feed.signals.find(s => s.status === 'new') ?? null
-  const price = pending ? await mid(pending.signal.coin).catch(() => null) : null
+  const [acct, price] = await Promise.all([
+    withAccount ? accountFor(user, 4000) : Promise.resolve(null),
+    pending ? within(mid(pending.signal.coin), 3000).catch(() => null) : Promise.resolve(null),
+  ])
   const last = feed.signals.find(s => s.status !== 'new') ?? null
   return json({
     name: user.name.split(' ')[0],
